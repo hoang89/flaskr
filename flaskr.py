@@ -1,6 +1,10 @@
 import sqlite3
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template,flash
 from contextlib import closing
+
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template,flash
+from simple_page import simple_page
+from system.system import system_information
+
 
 #configuration database
 DATABASE = '/tmp/flaskr.db'
@@ -14,6 +18,8 @@ PROPAGATE_EXCEPTIONS = True
 
 app = Flask(__name__)
 app.config.from_object(__name__)
+app.register_blueprint(simple_page)
+app.register_blueprint(system_information)
 
 
 def connect_db():
@@ -31,6 +37,7 @@ def init_db():
 @app.before_request
 def before_request():
     g.db = connect_db()
+    app.logger.debug('Function before request execute: '+ request.path )
 
 
 @app.teardown_request
@@ -77,17 +84,12 @@ def login():
 def logout():
     session.pop('logged_in', None)
     flash('You were logout')
-    return  redirect(url_for('show_entries'))
+    return redirect(url_for('show_entries'))
 
-
-@app.route('/upload', methods=['GET', 'POST'])
-def upload():
-    if request.method == 'POST':
-        f = request.files['the_file']
-        f.save('/var/www/uploads/uploaded_file.txt')
-        return 'Upload success'
-    return render_template('upload.html')
-
+def redirect_url():
+    return request.args.get('next') or \
+           request.referrer or \
+           url_for('index')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=80)
+    app.run(debug=True)
