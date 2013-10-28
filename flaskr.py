@@ -8,6 +8,7 @@ DEBUG = True
 SECRET_KEY = 'development key'
 USERNAME = 'admin'
 PASSWORD = 'default'
+PROPAGATE_EXCEPTIONS = True
 
 
 
@@ -42,7 +43,7 @@ def teardown_request(exception):
 def show_entries():
     cur = g.db.execute('select title,text from entries order by id desc')
     entries = [dict(title=row[0], text=row[1]) for row in cur.fetchall()]
-    return render_template("show_entries.html", entries = entries)
+    return render_template("show_entries.html", entries=entries)
 
 @app.route('/add', methods=["GET","POST"])
 def add_entry():
@@ -52,6 +53,11 @@ def add_entry():
     g.db.commit()
     flash("New entry was  success addded")
     return redirect(url_for('show_entries'))
+
+
+@app.route('/redirect', methods=['GET', 'POST'])
+def test_re():
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -73,5 +79,15 @@ def logout():
     flash('You were logout')
     return  redirect(url_for('show_entries'))
 
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    if request.method == 'POST':
+        f = request.files['the_file']
+        f.save('/var/www/uploads/uploaded_file.txt')
+        return 'Upload success'
+    return render_template('upload.html')
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
